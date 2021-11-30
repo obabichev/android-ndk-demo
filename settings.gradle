@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Test NDK"
 include ':app'
+include ':opencv'
