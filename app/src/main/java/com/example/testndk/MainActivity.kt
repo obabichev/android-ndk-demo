@@ -1,5 +1,6 @@
 package com.example.testndk
 
+import android.Manifest
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -9,35 +10,36 @@ import android.widget.TextView
 import com.example.testndk.databinding.ActivityMainBinding
 import org.opencv.android.*
 import org.opencv.core.Mat
+import androidx.core.app.ActivityCompat
+
+import android.content.pm.PackageManager
+
+import androidx.core.content.ContextCompat
+
 
 const val TAG = "MY_TAG"
+const val PERMISSION_REQUEST_CODE = 200
 
 class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var javaCameraView: JavaCameraView
+    private var javaCameraView: JavaCameraView? = null
 
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
         override fun onManagerConnected(status: Int) {
             when (status) {
                 LoaderCallbackInterface.SUCCESS -> {
-                    javaCameraView.enableView()
+                    javaCameraView?.setCameraPermissionGranted()
+                    javaCameraView?.enableView()
                     Log.d(TAG, "callback: opencv loaded successfully")
                 }
-                else -> Log.d(TAG, "callback: could not load opencv")
+                else -> {
+                    super.onManagerConnected(status)
+                    Log.d(TAG, "callback: could not load opencv")
+                }
             }
         }
     }
-
-//    class LoaderCallbackImpl(private val context: Context) : BaseLoaderCallback(context) {
-//        override fun onManagerConnected(status: Int) {
-//            when(status) {
-//                LoaderCallbackInterface.SUCCESS -> javaCamreaView
-//            }
-//        }
-//    }
-
-//    private val mLoaderCallback = LoaderCallbackImpl(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,9 +50,31 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         // Example of a call to a native method
 //        binding.sampleText.text = stringFromJNI()
 
-        javaCameraView = findViewById(R.id.java_camera_view)
-        javaCameraView.visibility = View.VISIBLE
-        javaCameraView.setCvCameraViewListener(this)
+        if (permission()) {
+            Log.d(TAG, "Permissions granted")
+            javaCameraView = findViewById(R.id.java_camera_view)
+            javaCameraView?.setCameraIndex(CameraBridgeViewBase.CAMERA_ID_FRONT)
+            javaCameraView?.visibility = View.VISIBLE
+            javaCameraView?.setCvCameraViewListener(this)
+
+        } else {
+            Log.d(TAG, "Request permission")
+            requestPermission()
+        }
+    }
+
+    private fun permission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestPermission() {
+        ActivityCompat.requestPermissions(
+            this, arrayOf(Manifest.permission.CAMERA),
+            PERMISSION_REQUEST_CODE
+        )
     }
 
     override fun onResume() {
@@ -85,13 +109,15 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
+        Log.d(TAG, "onCameraViewStarted(width=$width, height=$height)")
     }
 
     override fun onCameraViewStopped() {
+        Log.d(TAG, "onCameraViewStopped()")
     }
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-        Log.d(TAG, "onCameraFrame()")
+//        Log.d(TAG, "onCameraFrame()")
         return inputFrame.gray()
     }
 }
