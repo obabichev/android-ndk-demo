@@ -91,6 +91,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     }
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
+        Log.d(TAG, "onCameraFrame()")
         return inputFrame.gray()
     }
 }
