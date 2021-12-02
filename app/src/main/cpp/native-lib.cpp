@@ -38,8 +38,7 @@ double getRatio(cv::Size src, int newSize) {
 void rotateGray(cv::Mat &src, int rotation) {
     switch (rotation) {
         case 0:
-            rotate(src, src, cv::ROTATE_90_CLOCKWISE);
-            flip(src, src, 1);
+            rotate(src, src, cv::ROTATE_90_COUNTERCLOCKWISE);
             break;
         case 90:
             break;
@@ -97,48 +96,23 @@ void drawFaceRectangle(
         float rw = (float) rect.width;
         float rh = (float) rect.height;
 
-        float w = x + rw;
-        float h = y + rh;
-        float yFix, hFix;
-        float xFix;
-
         switch (rotation) {
             case 0:
-                cv::rectangle(rgba, cv::Rect(y, x, h, w), color,
-                              frame_thickness); // TODO fix according to orientation
-//                rectFace(rgba, y, x, h, w, RED);
-//                drawDot(rgba, y, x, GREEN);
+                cv::rectangle(rgba, cv::Rect(scrW - y - rh, x, rh, rw), color, frame_thickness);
                 break;
 
             case 90:
-//                rectFace(rgba, x, y, w, h, RED);
-//                drawDot(rgba, x, y, GREEN);
-                cv::rectangle(rgba, cv::Rect(x, y, w, h), color,
-                              frame_thickness); // TODO fix according to orientation
-
+                cv::rectangle(rgba, cv::Rect(x, y, rw, rh), color,
+                              frame_thickness);
                 break;
 
-            case 180:
-                // fix height
-                yFix = scrW - y;
-                hFix = yFix - rh;
-//                rectFace(rgba, yFix, x, hFix, w, YELLOW);
-//                drawDot(rgba, yFix, x, BLUE);
-//                xFix = scrW - y - h;
-
-                cv::rectangle(rgba, cv::Rect(yFix, x, hFix, w), color,
-                              frame_thickness);
-//                cv::rectangle(rgba, cv::Rect(x, yFix, w, hFix), color, frame_thickness); // TODO fix according to orientation
+            case 180: // TODO was not tested due to smartphone limitations
+                cv::rectangle(rgba, cv::Rect(x, y, rw, rh), color,
+                              frame_thickness); // TODO fix according to orientation
                 break;
 
             case 270:
-                // fix height
-                yFix = scrH - y;
-                hFix = yFix - rh;
-//                rectFace(rgba, x, yFix, w, hFix, YELLOW);
-//                drawDot(rgba, x, yFix, BLUE);
-                cv::rectangle(rgba, cv::Rect(x, yFix, w, hFix), color,
-                              frame_thickness); // TODO fix according to orientation
+                cv::rectangle(rgba, cv::Rect(x, scrH - y - rh, rw, rh), color, frame_thickness);
                 break;
 
             default:
