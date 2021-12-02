@@ -1,10 +1,12 @@
 package com.example.testndk
 
 import android.Manifest
+import android.R.attr
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.view.Display
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -12,10 +14,15 @@ import androidx.core.content.ContextCompat
 import com.example.testndk.databinding.ActivityMainBinding
 import com.example.testndk.demo.NativeClass
 import org.opencv.android.*
+import org.opencv.core.Core
 import org.opencv.core.Mat
+import org.opencv.imgproc.Imgproc
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import android.view.WindowManager
+import android.R.attr.rotation
+import android.view.Surface
 
 
 const val TAG = "MY_TAG"
@@ -25,6 +32,8 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     private lateinit var binding: ActivityMainBinding
     private var javaCameraView: JavaCameraView? = null
+
+    private var deviceRotation = 0
 
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
         override fun onManagerConnected(status: Int) {
@@ -55,6 +64,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         if (permission()) {
             Log.d(TAG, "Permissions granted")
             javaCameraView = findViewById(R.id.java_camera_view)
+//            javaCameraView?.rotation = 90.0
             javaCameraView?.setCameraIndex(CameraBridgeViewBase.CAMERA_ID_FRONT)
             javaCameraView?.visibility = View.VISIBLE
             javaCameraView?.setCvCameraViewListener(this)
@@ -79,9 +89,23 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         )
     }
 
+    fun updateRotation() {
+        val display: Display = (getSystemService(WINDOW_SERVICE) as WindowManager).defaultDisplay
+        val rotation: Int = display.getRotation()
+
+        when (rotation) {
+            Surface.ROTATION_0 -> deviceRotation = 0
+            Surface.ROTATION_90 -> deviceRotation = 90
+            Surface.ROTATION_180 -> deviceRotation = 180
+            Surface.ROTATION_270 -> deviceRotation = 270
+        }
+        Log.d(TAG, "Current orientation: $deviceRotation")
+    }
+
     override fun onResume() {
         Log.d(TAG, "in onResume()")
         super.onResume()
+        updateRotation()
 
         if (!OpenCVLoader.initDebug()) {
             val success = OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, this, mLoaderCallback)
@@ -107,12 +131,14 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         val mRgba = inputFrame.rgba()
-        val screenRotation = this.resources.configuration.orientation * 90 + 90
+
+//        val screenRotation = this.resources.configuration.orientation * 90 + 90
+//        Log.d(TAG, "Rotation: $screenRotation")
 
         NativeClass.faceDetection(
             mRgba.nativeObjAddr,
             480,
-            screenRotation,
+            deviceRotation,
             faceModel!!.absolutePath
         )
         return mRgba
@@ -155,12 +181,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     //    lateinit var faceDir: File
     var imageRatio = 0.0 // scale down ratio
-
-    /**
-     * A native method that is implemented by the 'testndk' native library,
-     * which is packaged with this application.
-     */
-    external fun stringFromJNI(): String
 
     companion object {
         private const val FACE_DIR = "facelib"

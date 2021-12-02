@@ -6,30 +6,6 @@
 #include "opencv2/videoio.hpp"
 #include "opencv2/core.hpp"
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_example_testndk_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    std::string hello = "Hello from C++";
-    return env->NewStringUTF(hello.c_str());
-}
-
-
-//cv::CascadeClassifier faceDetector;
-
-//extern "C"
-//JNIEXPORT void JNICALL
-//Java_com_example_testndk_demo_NativeClass_00024Companion_testFunction(JNIEnv *env, jobject thiz,
-//                                                                      jlong addr_rgba) {
-//    cv::Mat &img = *(cv::Mat *) addr_rgba;
-//
-////    auto rectangles = face_detector.detect_face_rectangles(img);
-////    cv::Scalar color(0, 105, 205);
-////    int frame_thickness = 4;
-////    for (const auto &r : rectangles) {
-////        cv::rectangle(img, r, color, frame_thickness);
-////    }
-//}
 
 cv::CascadeClassifier faceDetector;
 
@@ -126,14 +102,9 @@ void drawFaceRectangle(
         float yFix, hFix;
         float xFix;
 
-        // draw rectangle
-//        for (const auto &r : rectangles) {
-//            cv::rectangle(img, r, color, frame_thickness);
-//        }
-
         switch (rotation) {
             case 0:
-                cv::rectangle(rgba, rect, color,
+                cv::rectangle(rgba, cv::Rect(y, x, h, w), color,
                               frame_thickness); // TODO fix according to orientation
 //                rectFace(rgba, y, x, h, w, RED);
 //                drawDot(rgba, y, x, GREEN);
@@ -142,31 +113,31 @@ void drawFaceRectangle(
             case 90:
 //                rectFace(rgba, x, y, w, h, RED);
 //                drawDot(rgba, x, y, GREEN);
-                cv::rectangle(rgba, rect, color,
+                cv::rectangle(rgba, cv::Rect(x, y, w, h), color,
                               frame_thickness); // TODO fix according to orientation
 
                 break;
 
             case 180:
                 // fix height
-//                yFix = scrW - y;
-//                hFix = yFix - rh;
+                yFix = scrW - y;
+                hFix = yFix - rh;
 //                rectFace(rgba, yFix, x, hFix, w, YELLOW);
 //                drawDot(rgba, yFix, x, BLUE);
-                 xFix = scrW - y - h;
+//                xFix = scrW - y - h;
 
-                cv::rectangle(rgba, cv::Rect(xFix, x, h, w), color,
+                cv::rectangle(rgba, cv::Rect(yFix, x, hFix, w), color,
                               frame_thickness);
 //                cv::rectangle(rgba, cv::Rect(x, yFix, w, hFix), color, frame_thickness); // TODO fix according to orientation
                 break;
 
             case 270:
                 // fix height
-//                yFix = scrH - y;
-//                hFix = yFix - rh;
+                yFix = scrH - y;
+                hFix = yFix - rh;
 //                rectFace(rgba, x, yFix, w, hFix, YELLOW);
 //                drawDot(rgba, x, yFix, BLUE);
-                cv::rectangle(rgba, rect, color,
+                cv::rectangle(rgba, cv::Rect(x, yFix, w, hFix), color,
                               frame_thickness); // TODO fix according to orientation
                 break;
 
@@ -190,9 +161,7 @@ Java_com_example_testndk_demo_NativeClass_00024Companion_faceDetection(JNIEnv *e
     cv::Mat mGr = cv::Mat();
     int mHeight = (int) height;
     int mRotation = (int) rotation;
-//    if (!cv::color2Gray(mRgb, mGr)) {
-//        lge("Grayscale conversion: failed!!!");
-//    }
+
     cv::cvtColor(mRgb, mGr, cv::COLOR_RGB2GRAY);
 
     cv::Size src = cv::Size(mGr.size().width, mGr.size().height);
