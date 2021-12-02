@@ -5,6 +5,12 @@
 
 cmake_minimum_required(VERSION 3.10.2)
 
+# opencv
+#set(OpenCV_STATIC on)
+#set(OpenCV_LOCATION ${OPENCV_ANDROID}/sdk/native/jni)
+#find_package(OpenCV REQUIRED)
+
+
 # Declares and names the project.
 
 project("testndk")
@@ -13,6 +19,10 @@ project("testndk")
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
+
+add_library(lib_opencv SHARED IMPORTED)
+set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/jniLibs/${ANDROID_ABI}/libopencv_java4.so)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/jniIncludes)
 
 add_library( # Sets the name of the library.
         testndk
@@ -32,6 +42,7 @@ add_library( # Sets the name of the library.
 find_library( # Sets the name of the path variable.
         log-lib
 
+        lib_opencv
         # Specifies the name of the NDK library that
         # you want CMake to locate.
         log)
@@ -44,7 +55,7 @@ target_link_libraries( # Specifies the target library.
         testndk
 
         # OpenCV lib
-#        lib_opencv
+        lib_opencv
 
         # Links the target library to the log library
         # included in the NDK.
