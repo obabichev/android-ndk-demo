@@ -1,22 +1,17 @@
 package com.example.testndk
 
 import android.Manifest
-import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.testndk.databinding.ActivityMainBinding
+import com.example.testndk.demo.NativeClass
 import org.opencv.android.*
 import org.opencv.core.Mat
-import androidx.core.app.ActivityCompat
-
-import android.content.pm.PackageManager
-
-import androidx.core.content.ContextCompat
-import com.example.testndk.demo.NativeClass
-import org.opencv.core.CvType
 
 
 const val TAG = "MY_TAG"
@@ -32,7 +27,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         override fun onManagerConnected(status: Int) {
             when (status) {
                 LoaderCallbackInterface.SUCCESS -> {
-//                    System.loadLibrary("native-lib")
                     javaCameraView?.setCameraPermissionGranted()
                     javaCameraView?.enableView()
                     Log.d(TAG, "callback: opencv loaded successfully")
@@ -114,7 +108,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     override fun onCameraViewStarted(width: Int, height: Int) {
         Log.d(TAG, "onCameraViewStarted(width=$width, height=$height)")
-//        mRgba = Mat(width, height, CvType.CV_8UC4)
     }
 
     override fun onCameraViewStopped() {
@@ -122,7 +115,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     }
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-//        Log.d(TAG, "onCameraFrame()")
         val mRgba = inputFrame.rgba()
         NativeClass.testFunction(mRgba.nativeObjAddr)
         return mRgba
