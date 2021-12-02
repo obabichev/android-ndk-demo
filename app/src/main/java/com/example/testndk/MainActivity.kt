@@ -1,6 +1,7 @@
 package com.example.testndk
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -12,6 +13,9 @@ import com.example.testndk.databinding.ActivityMainBinding
 import com.example.testndk.demo.NativeClass
 import org.opencv.android.*
 import org.opencv.core.Mat
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 
 const val TAG = "MY_TAG"
@@ -21,12 +25,12 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     private lateinit var binding: ActivityMainBinding
     private var javaCameraView: JavaCameraView? = null
-//    private var mRgba: Mat? = null
 
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
         override fun onManagerConnected(status: Int) {
             when (status) {
                 LoaderCallbackInterface.SUCCESS -> {
+                    loadFaceLib()
                     javaCameraView?.setCameraPermissionGranted()
                     javaCameraView?.enableView()
                     Log.d(TAG, "callback: opencv loaded successfully")
@@ -93,19 +97,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         }
     }
 
-    /**
-     * A native method that is implemented by the 'testndk' native library,
-     * which is packaged with this application.
-     */
-    external fun stringFromJNI(): String
-
-    companion object {
-        // Used to load the 'testndk' library on application startup.
-        init {
-            System.loadLibrary("testndk")
-        }
-    }
-
     override fun onCameraViewStarted(width: Int, height: Int) {
         Log.d(TAG, "onCameraViewStarted(width=$width, height=$height)")
     }
@@ -116,7 +107,68 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         val mRgba = inputFrame.rgba()
-        NativeClass.testFunction(mRgba.nativeObjAddr)
+        val screenRotation = this.resources.configuration.orientation * 90 + 90
+
+        NativeClass.faceDetection(
+            mRgba.nativeObjAddr,
+            480,
+            screenRotation,
+            faceModel!!.absolutePath
+        )
         return mRgba
+    }
+
+    fun loadFaceLib() {
+        val modelInputStream =
+            resources.openRawResource(R.raw.haarcascade_frontalface_alt2)
+        try {
+
+
+            // create a temp directory
+            val faceDir = getDir(FACE_DIR, Context.MODE_PRIVATE)
+
+            // create a model file
+            faceModel = File(faceDir, FACE_MODEL)
+
+            // copy model to new face library
+            val modelOutputStream = FileOutputStream(faceModel)
+
+            val buffer = ByteArray(byteSize)
+            var byteRead = modelInputStream.read(buffer)
+            while (byteRead != -1) {
+                modelOutputStream.write(buffer, 0, byteRead)
+                byteRead = modelInputStream.read(buffer)
+            }
+
+            modelInputStream.close()
+            modelOutputStream.close()
+
+//            faceDetector = CascadeClassifier(faceModel.absolutePath)
+            Log.d(TAG, "Face lib loaded successfully")
+        } catch (e: IOException) {
+            Log.d(TAG, "Error loading cascade face model...$e")
+
+        }
+    }
+
+    var faceModel: File? = null
+
+    //    lateinit var faceDir: File
+    var imageRatio = 0.0 // scale down ratio
+
+    /**
+     * A native method that is implemented by the 'testndk' native library,
+     * which is packaged with this application.
+     */
+    external fun stringFromJNI(): String
+
+    companion object {
+        private const val FACE_DIR = "facelib"
+        private const val FACE_MODEL = "haarcascade_frontalface_alt2.xml"
+        private const val byteSize = 4096 // buffer size
+
+        init {
+            System.loadLibrary("testndk")
+        }
     }
 }

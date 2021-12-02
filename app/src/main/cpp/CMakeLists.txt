@@ -11,6 +11,7 @@ cmake_minimum_required(VERSION 3.10.2)
 #find_package(OpenCV REQUIRED)
 
 
+
 # Declares and names the project.
 
 project("testndk")
@@ -60,3 +61,11 @@ target_link_libraries( # Specifies the target library.
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})
+
+
+# Introduce preprocessor variables to keep paths of asset files
+set(FACE_DETECTION_CONFIGURATION "${CMAKE_CURRENT_SOURCE_DIR}/assets/deploy.prototxt")
+set(FACE_DETECTION_WEIGHTS "${CMAKE_CURRENT_SOURCE_DIR}/assets/res10_300x300_ssd_iter_140000_fp16.caffemodel")
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE FACE_DETECTION_CONFIGURATION="${FACE_DETECTION_CONFIGURATION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE FACE_DETECTION_WEIGHTS="${FACE_DETECTION_WEIGHTS}")
