@@ -1,1 +1,0 @@
-/Users/obabichev/AndroidStudioProjects/TestNDK/opencv/build/intermediates/cxx/Debug/1a3i612t/obj/x86
