@@ -21,8 +21,14 @@ project("testndk")
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
+# OpenCV
 add_library(lib_opencv SHARED IMPORTED)
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/jniLibs/${ANDROID_ABI}/libopencv_java4.so)
+
+# Tensorflow
+add_library(lib_tflite SHARED IMPORTED)
+set_target_properties(lib_tflite PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/jniLibs/${ANDROID_ABI}/libtensorflowlite_jni.so)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/jniIncludes)
 
 add_library( # Sets the name of the library.
@@ -57,6 +63,8 @@ target_link_libraries( # Specifies the target library.
 
         # OpenCV lib
         lib_opencv
+
+        lib_tflite
 
         # Links the target library to the log library
         # included in the NDK.
