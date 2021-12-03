@@ -8,5 +8,9 @@ class NativeClass {
             rotation: Int,
             modelPath: String
         ): Boolean;
+
+        external fun loadTensorflowModel()
+
+        external fun testTensorflowLite(matAddrRgba: Long,)
     }
 }
