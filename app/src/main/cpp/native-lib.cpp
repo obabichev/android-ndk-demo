@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <string>
+#include <tensorflow/lite/c/c_api.h>
 #include "opencv2/objdetect.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
@@ -163,3 +164,31 @@ Java_com_example_testndk_demo_NativeClass_00024Companion_faceDetection(JNIEnv *e
     return (jboolean) true;
 }
 
+TfLiteInterpreter *interpreter;
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_testndk_demo_NativeClass_00024Companion_loadTensorflowModel(JNIEnv *env,
+                                                                             jobject thiz) {
+    TfLiteModel *model = TfLiteModelCreateFromFile(TENSORFLOW_MODEL_TFLITE);
+
+    TfLiteInterpreterOptions *options = TfLiteInterpreterOptionsCreate();
+
+    // Create the interpreter.
+    interpreter = TfLiteInterpreterCreate(model, options);
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_testndk_demo_NativeClass_00024Companion_testTensorflowLite(JNIEnv *env,
+                                                                            jobject thiz,
+                                                                            jlong mat_addr_rgba) {
+    cv::Mat &mRgb = *(cv::Mat *) mat_addr_rgba;
+
+    // Allocate tensors and populate the input tensor data.
+    TfLiteInterpreterAllocateTensors(interpreter);
+    TfLiteTensor* input_tensor =
+            TfLiteInterpreterGetInputTensor(interpreter, 0);
+
+}

@@ -21,9 +21,16 @@ project("testndk")
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
+# OpenCV
 add_library(lib_opencv SHARED IMPORTED)
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/jniLibs/${ANDROID_ABI}/libopencv_java4.so)
+
+# Tensorflow
+add_library(lib_tflite SHARED IMPORTED)
+set_target_properties(lib_tflite PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/jniLibs/${ANDROID_ABI}/libtensorflowlite_jni.so)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/jniIncludes)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/assets)
 
 add_library( # Sets the name of the library.
         testndk
@@ -58,6 +65,8 @@ target_link_libraries( # Specifies the target library.
         # OpenCV lib
         lib_opencv
 
+        lib_tflite
+
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})
@@ -67,5 +76,8 @@ target_link_libraries( # Specifies the target library.
 set(FACE_DETECTION_CONFIGURATION "${CMAKE_CURRENT_SOURCE_DIR}/assets/deploy.prototxt")
 set(FACE_DETECTION_WEIGHTS "${CMAKE_CURRENT_SOURCE_DIR}/assets/res10_300x300_ssd_iter_140000_fp16.caffemodel")
 
+set(TENSORFLOW_MODEL_TFLITE "${CMAKE_CURRENT_SOURCE_DIR}/assets/mobilenet_v1_1_0_224_quant.tflite")
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE FACE_DETECTION_CONFIGURATION="${FACE_DETECTION_CONFIGURATION}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE FACE_DETECTION_WEIGHTS="${FACE_DETECTION_WEIGHTS}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE TENSORFLOW_MODEL_TFLITE="${TENSORFLOW_MODEL_TFLITE}")
