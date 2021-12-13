@@ -9,8 +9,8 @@ class NativeClass {
             modelPath: String
         ): Boolean;
 
-        external fun loadTensorflowModel()
+        external fun loadTensorflowModel(absolutePath: String)
 
-        external fun testTensorflowLite(matAddrRgba: Long,)
+        external fun testTensorflowLite(matAddrRgba: Long, dest: Long): Boolean
     }
 }
