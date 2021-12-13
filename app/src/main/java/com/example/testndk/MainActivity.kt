@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         override fun onManagerConnected(status: Int) {
             when (status) {
                 LoaderCallbackInterface.SUCCESS -> {
-                    tensorflowModel = loadModel(R.raw.selfie_segmentstion_no_custom_op, FACE_DIR, FACE_MODEL)
+                    tensorflowModel = loadModel(R.raw.selfie_segmentstion_no_custom_op, FACE_DIR, "selfie.tflite")
                     val background = loadModel(R.raw.image, FACE_DIR, FACE_MODEL)
                     backgroundDefault = Imgcodecs.imread(background!!.absolutePath)
                     NativeClass.loadTensorflowModel(tensorflowModel!!.absolutePath)
