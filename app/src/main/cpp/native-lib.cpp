@@ -1,12 +1,13 @@
 #include <jni.h>
 #include <string>
 #include <tensorflow/lite/c/c_api.h>
+#include <tensorflow/lite/c/common.h>
 #include "opencv2/objdetect.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/videoio.hpp"
 #include "opencv2/core.hpp"
-
+#include "iostream"
 
 cv::CascadeClassifier faceDetector;
 
@@ -132,6 +133,7 @@ Java_com_example_testndk_demo_NativeClass_00024Companion_faceDetection(JNIEnv *e
                                                                        jint height,
                                                                        jint rotation,
                                                                        jstring model_path) {
+    return (jboolean) true;
     cv::Mat &mRgb = *(cv::Mat *) mat_addr_rgba;
     cv::Mat mGr = cv::Mat();
     int mHeight = (int) height;
@@ -166,29 +168,64 @@ Java_com_example_testndk_demo_NativeClass_00024Companion_faceDetection(JNIEnv *e
 
 TfLiteInterpreter *interpreter;
 
+void reporter(void* user_data, const char* format, va_list args)
+{
+    std::cout << "Error" << std::endl;
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_testndk_demo_NativeClass_00024Companion_loadTensorflowModel(JNIEnv *env,
-                                                                             jobject thiz) {
-    TfLiteModel *model = TfLiteModelCreateFromFile(TENSORFLOW_MODEL_TFLITE);
-
+                                                                             jobject thiz,
+                                                                             jstring model_path) {
+    const char *MODEL_PATH = env->GetStringUTFChars(model_path, 0);
+    TfLiteModel *model = TfLiteModelCreateFromFile(MODEL_PATH);
     TfLiteInterpreterOptions *options = TfLiteInterpreterOptionsCreate();
-
+    TfLiteInterpreterOptionsSetNumThreads(options, 2);
+    TfLiteInterpreterOptionsSetErrorReporter(options, reporter, NULL);
     // Create the interpreter.
     interpreter = TfLiteInterpreterCreate(model, options);
+    auto allocateStatus = TfLiteInterpreterAllocateTensors(interpreter);
+    assert(allocateStatus == TfLiteStatus::kTfLiteOk);
 }
 
 
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_com_example_testndk_demo_NativeClass_00024Companion_testTensorflowLite(JNIEnv *env,
                                                                             jobject thiz,
-                                                                            jlong mat_addr_rgba) {
+                                                                            jlong mat_addr_rgba,
+                                                                            jlong dest_addr) {
     cv::Mat &mRgb = *(cv::Mat *) mat_addr_rgba;
+    cv::cvtColor(mRgb, mRgb, cv::COLOR_RGBA2RGB);
+    cv::Mat image;
+    cv::resize(mRgb, image, cv::Size(256, 256));
+    mRgb.type(); mRgb.channels();
 
+    cv::Mat inputMat;
+    image.convertTo(inputMat, CV_32FC3);
+
+    inputMat /= 255;
     // Allocate tensors and populate the input tensor data.
-    TfLiteInterpreterAllocateTensors(interpreter);
     TfLiteTensor* input_tensor =
             TfLiteInterpreterGetInputTensor(interpreter, 0);
+    auto copyFromStatus = TfLiteTensorCopyFromBuffer(input_tensor, inputMat.data, inputMat.u->size);
 
+    auto invokeStatus = TfLiteInterpreterInvoke(interpreter);
+
+    const TfLiteTensor* output_tensor =
+          TfLiteInterpreterGetOutputTensor(interpreter, 0);
+
+    cv::Mat outputMat(cv::Size(256, 256), CV_32F);
+    auto status = TfLiteTensorCopyToBuffer(output_tensor, (void *)outputMat.data,
+                             outputMat.u->size);
+    std::cout << status;
+
+
+
+    cv::Mat &outMat = *(cv::Mat *) dest_addr;
+    cv::resize(outputMat, outputMat, outMat.size());
+    outputMat.copyTo(outMat);
+    std::cout << "";
+    return true;
 }

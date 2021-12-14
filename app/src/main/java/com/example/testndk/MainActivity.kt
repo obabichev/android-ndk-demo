@@ -14,11 +14,15 @@ import com.example.testndk.databinding.ActivityMainBinding
 import com.example.testndk.demo.NativeClass
 import org.opencv.android.*
 import org.opencv.core.Mat
+import org.opencv.core.CvType
+import org.opencv.core.*
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import android.view.WindowManager
 import android.view.Surface
+import org.opencv.imgcodecs.Imgcodecs
+import org.opencv.imgproc.Imgproc
 
 
 const val TAG = "MY_TAG"
@@ -35,8 +39,10 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         override fun onManagerConnected(status: Int) {
             when (status) {
                 LoaderCallbackInterface.SUCCESS -> {
-                    NativeClass.loadTensorflowModel()
-                    faceModel = loadModel(R.raw.haarcascade_frontalface_alt2, FACE_DIR, FACE_MODEL)
+                    tensorflowModel = loadModel(R.raw.selfie_segmentstion_no_custom_op, FACE_DIR, "selfie.tflite")
+                    val background = loadModel(R.raw.image, FACE_DIR, FACE_MODEL)
+                    backgroundDefault = Imgcodecs.imread(background!!.absolutePath)
+                    NativeClass.loadTensorflowModel(tensorflowModel!!.absolutePath)
                     javaCameraView?.setCameraPermissionGranted()
                     javaCameraView?.enableView()
                     Log.d(TAG, "callback: opencv loaded successfully")
@@ -126,19 +132,32 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         Log.d(TAG, "onCameraViewStopped()")
     }
 
+    private fun getPersonMask(img: Mat): Mat {
+        val mask = Mat.zeros(img.size(), CvType.CV_32F);
+        NativeClass.testTensorflowLite(img.nativeObjAddr, mask.nativeObjAddr);
+        val binaryMask = Mat();
+        Core.compare(mask, Scalar(0.1), binaryMask, Core.CMP_LE)
+        Core.multiply(mask, Scalar(255.0), mask)
+        return binaryMask
+    }
+
+    private fun processFrame(frame: Mat): Mat {
+        var mask = getPersonMask(frame)
+        if (backgroundDefault!!.size() != frame.size()){
+            Imgproc.resize(backgroundDefault, backgroundDefault, frame.size())
+        }
+        var background = backgroundDefault!!.clone()
+
+        frame.setTo(Scalar(0.0), mask)
+        Core.bitwise_not(mask, mask)
+        background.setTo(Scalar(0.0), mask)
+        Core.add(frame, background, frame)
+        return frame
+    }
+
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         val mRgba = inputFrame.rgba()
-
-//        val screenRotation = this.resources.configuration.orientation * 90 + 90
-//        Log.d(TAG, "Rotation: $screenRotation")
-
-        NativeClass.faceDetection(
-            mRgba.nativeObjAddr,
-            480,
-            deviceRotation,
-            faceModel!!.absolutePath
-        )
-        return mRgba
+        return processFrame(mRgba)
     }
 
     fun loadModel(resourceId: Int, dir: String, model: String): File? {
@@ -246,7 +265,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     var faceModel: File? = null
     var tensorflowModel: File? = null
-
+    var backgroundDefault: Mat? = null
     //    lateinit var faceDir: File
 //    var imageRatio = 0.0 // scale down ratio
 
@@ -254,8 +273,8 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         private const val FACE_DIR = "facelib"
         private const val FACE_MODEL = "haarcascade_frontalface_alt2.xml"
 
-//        private const val TENSORFLOW_DIR = "tensorflowlib"
-//        private const val TENSORFLOW_MODEL = "mobilenet_v1_1_0_224_quant.tflite"
+        private const val TENSORFLOW_DIR = "tensorflowlib"
+        private const val TENSORFLOW_MODEL = "selfie_segmentation_no_custom_op.tflite"
 
         private const val byteSize = 4096 // buffer size
 
