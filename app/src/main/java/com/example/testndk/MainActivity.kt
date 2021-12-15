@@ -23,6 +23,7 @@ import android.view.WindowManager
 import android.view.Surface
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
+import org.opencv.core.Core
 
 
 const val TAG = "MY_TAG"
@@ -39,7 +40,8 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         override fun onManagerConnected(status: Int) {
             when (status) {
                 LoaderCallbackInterface.SUCCESS -> {
-                    tensorflowModel = loadModel(R.raw.selfie_segmentstion_no_custom_op, FACE_DIR, "selfie.tflite")
+                    tensorflowModel =
+                        loadModel(R.raw.selfie_segmentstion_no_custom_op, FACE_DIR, "selfie.tflite")
                     val background = loadModel(R.raw.image, FACE_DIR, FACE_MODEL)
                     backgroundDefault = Imgcodecs.imread(background!!.absolutePath)
                     NativeClass.loadTensorflowModel(tensorflowModel!!.absolutePath)
@@ -92,7 +94,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         )
     }
 
-    fun updateRotation() {
+    private fun updateRotation() {
         val display: Display = (getSystemService(WINDOW_SERVICE) as WindowManager).defaultDisplay
         val rotation: Int = display.getRotation()
 
@@ -143,7 +145,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     private fun processFrame(frame: Mat): Mat {
         var mask = getPersonMask(frame)
-        if (backgroundDefault!!.size() != frame.size()){
+        if (backgroundDefault!!.size() != frame.size()) {
             Imgproc.resize(backgroundDefault, backgroundDefault, frame.size())
         }
         var background = backgroundDefault!!.clone()
@@ -156,7 +158,19 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     }
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-        val mRgba = inputFrame.rgba()
+        var mRgba = inputFrame.rgba()
+
+        if (deviceRotation == 0) {
+            val mRgbaT: Mat = mRgba.t()
+            Core.flip(mRgba.t(), mRgbaT, 0)
+            Imgproc.resize(mRgbaT, mRgbaT, mRgba.size(), 0.0, 0.0)
+            mRgba = mRgbaT
+        }
+
+        if (deviceRotation == 270) {
+            Core.flip(mRgba, mRgba, 0)
+        }
+
         return processFrame(mRgba)
     }
 
@@ -194,80 +208,8 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         return null
     }
 
-//    fun loadFaceLib() = loadModel(R.raw.haarcascade_frontalface_alt2, FACE_DIR, FACE_MODEL)
-//    fun loadFaceLib() = loadModel(R.raw.haarcascade_frontalface_alt2, FACE_DIR, FACE_MODEL)
-
-//    fun loadFaceLib() {
-//        val modelInputStream =
-//            resources.openRawResource(R.raw.haarcascade_frontalface_alt2)
-//        try {
-//
-//
-//            // create a temp directory
-//            val faceDir = getDir(FACE_DIR, Context.MODE_PRIVATE)
-//
-//            // create a model file
-//            faceModel = File(faceDir, FACE_MODEL)
-//
-//            // copy model to new face library
-//            val modelOutputStream = FileOutputStream(faceModel)
-//
-//            val buffer = ByteArray(byteSize)
-//            var byteRead = modelInputStream.read(buffer)
-//            while (byteRead != -1) {
-//                modelOutputStream.write(buffer, 0, byteRead)
-//                byteRead = modelInputStream.read(buffer)
-//            }
-//
-//            modelInputStream.close()
-//            modelOutputStream.close()
-//
-////            faceDetector = CascadeClassifier(faceModel.absolutePath)
-//            Log.d(TAG, "Face lib loaded successfully")
-//        } catch (e: IOException) {
-//            Log.d(TAG, "Error loading cascade face model...$e")
-//
-//        }
-//    }
-
-//    fun loadTensorflowLib() {
-//        val modelInputStream =
-//            resources.openRawResource(R.raw.haarcascade_frontalface_alt2)
-//        try {
-//
-//
-//            // create a temp directory
-//            val faceDir = getDir(FACE_DIR, Context.MODE_PRIVATE)
-//
-//            // create a model file
-//            faceModel = File(faceDir, FACE_MODEL)
-//
-//            // copy model to new face library
-//            val modelOutputStream = FileOutputStream(faceModel)
-//
-//            val buffer = ByteArray(byteSize)
-//            var byteRead = modelInputStream.read(buffer)
-//            while (byteRead != -1) {
-//                modelOutputStream.write(buffer, 0, byteRead)
-//                byteRead = modelInputStream.read(buffer)
-//            }
-//
-//            modelInputStream.close()
-//            modelOutputStream.close()
-//
-////            faceDetector = CascadeClassifier(faceModel.absolutePath)
-//            Log.d(TAG, "Face lib loaded successfully")
-//        } catch (e: IOException) {
-//            Log.d(TAG, "Error loading cascade face model...$e")
-//
-//        }
-//    }
-
-    var faceModel: File? = null
     var tensorflowModel: File? = null
     var backgroundDefault: Mat? = null
-    //    lateinit var faceDir: File
-//    var imageRatio = 0.0 // scale down ratio
 
     companion object {
         private const val FACE_DIR = "facelib"
